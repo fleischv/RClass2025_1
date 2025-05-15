@@ -1,0 +1,43 @@
+---
+title: "DemoQuarto"
+author: "Vanessa"
+format: 
+  docx:
+    reference-doc: C:/Users/Vanessa Fleischer/template_quarto.docx
+    toc: true #table of content
+editor: visual
+execute: 
+  echo: false # jammel needs lower letters -->  the underling source code of a function won´t be in the document, just the output
+  warning: false # no warnings in the report
+  output: asis # output as it is, no formating
+#figure setting
+fig-dpi: 300 # graphs to publish 600 
+fig-width: 6 # 6 and 8 fill a page with the figure
+fig-height: 8 # 3.2 = 2 figures on one page
+tbl-cap-location: top #Table caption top and not underneath
+---
+
+# Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+find your absolut path: "C:/ and press Tab. like this you can go throw your files
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: true
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+This is a mixture of text and like mean wt: `r mean(mtcars$wt)`; that is useful.
