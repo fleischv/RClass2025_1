@@ -1,0 +1,384 @@
+---
+title: "descriptiv analysis of the penguin dataset"
+author: "Vanessa"
+format: 
+  docx:
+    reference-doc: C:/Users/Vanessa Fleischer/template_quarto.docx
+    toc: true #table of content
+editor: visual
+execute: 
+  echo: false # jammel needs lower letters -->  the underling source code of a function won´t be in the document, just the output
+  warning: false # no warnings in the report
+  output: asis # output as it is, no formating
+#figure setting
+fig-dpi: 300 # graphs to publish 600 
+fig-width: 6 # 6 and 8 fill a page with the figure
+fig-height: 8 # 3.2 = 2 figures on one page
+tbl-cap-location: top #Table caption top and not underneath
+---
+
+# descriptiv analysis with summarize / across
+
+```{r}
+pacman::p_load(conflicted,tidyverse,wrappedtools,
+               flextable)
+
+conflicts_prefer(dplyr::filter)
+
+data(penguins)
+
+clean_data_penguins <- penguins |>
+  drop_na()
+```
+
+<br>
+
+## 1 variable / 1 function / no groups 
+
+<br>
+
+```{r}
+summarize(.data = clean_data_penguins,
+          MeanSD=meansd(body_mass)) |> 
+  flextable()
+```
+
+<br>
+
+## 1 variable / 1 function / subgroups
+
+### groups in rows
+
+<br>
+
+```{r}
+clean_data_penguins |> 
+  group_by(species) |> 
+  summarize(MeanSD=meansd(body_mass),
+          .groups = 'drop') |> 
+  flextable()|>
+  set_table_properties(width=0.4, layout="autofit")
+
+```
+
+###  groups in columns
+
+<br>
+
+```{r}
+clean_data_penguins |> 
+  group_by(species) |> 
+summarize(MeanSD=meansd(body_mass),
+          .groups = 'drop') |>
+  pivot_wider(names_from = species, # create new columnes!
+              values_from = MeanSD,
+              names_glue = "{species}") |>#optional
+  flextable()|> 
+  separate_header(split = ": ")|>
+  set_table_properties(width=0.4, layout="autofit")
+```
+
+<br>
+
+```{r}
+clean_data_penguins |> 
+  group_by(species) |> 
+summarize(MeanSD=meansd(body_mass),
+          .groups = 'drop') |>
+  pivot_longer(
+    cols = "MeanSD",
+    names_to = "  ",
+    values_to = "MeanSD")|>
+  pivot_wider(names_from = species, # create new columnes!
+              values_from = MeanSD) |>#optional
+  flextable()|> 
+  separate_header(split = ": ")
+```
+
+<br>
+
+## 1 variable / 2 functions / no groups 
+
+<br>
+
+```{r}
+summarize(.data = clean_data_penguins,
+          `MeanSD body_mass`=meansd(body_mass),
+          `MedianQuartiles body_mass`=median_quart(body_mass)) |> 
+  flextable()|>
+  set_table_properties(width=0.4, layout="autofit")
+```
+
+<br>
+
+## 1 variable / 2 functions / subgroups
+
+### groups in rows
+
+<br>
+
+```{r}
+clean_data_penguins |> 
+  group_by(species) |> 
+  summarize( `MeanSD body_mass`=meansd(body_mass, roundDig = 3),
+          `MedianQuartiles body_mass`=median_quart(body_mass, roundDig = 3),
+          .groups = 'drop') |> 
+  flextable() |>
+  separate_header(split = " ") |>
+  set_table_properties(width=0.6, layout="autofit")
+```
+
+<br>
+
+###  groups in columns 
+
+<br>
+
+```{r}
+clean_data_penguins |> 
+  group_by(species) |> 
+  summarize(`MeanSD body_mass`=meansd(body_mass),
+          `MedianQuartiles body_mass`=median_quart(body_mass),
+          .groups = 'drop') |> 
+  pivot_longer(
+    cols = starts_with("M"),
+    names_to = "Statistics",
+    values_to = "estimate") |>
+  pivot_wider(names_from = species,
+              values_from = estimate) |>
+  flextable()|>
+  separate_header(split = ": ")|>
+  set_table_properties(width=0.8, layout="autofit")
+
+```
+
+<br>
+
+## all variables / 1 function / no groups 
+
+<br>
+
+```{r}
+
+numvars <-
+  ColSeeker(
+    data = penguins, # can be omitted, as it is the default
+    namepattern = "_"
+  )
+```
+
+<br>
+
+###  no function arguments 
+
+<br>
+
+```{r}
+clean_data_penguins |> 
+  summarize(across(all_of(numvars$names),
+                   .fns=~meansd(.x))) |> 
+  flextable()
+```
+
+<br>
+
+###  with function arguments 
+
+<br>
+
+```{r}
+clean_data_penguins |> 
+  summarize(across(all_of(numvars$names),
+                   .fns=~meansd(.x,add_n = TRUE))) |> 
+  flextable()|> 
+  set_table_properties(width=.7, layout="autofit")
+```
+
+<br>
+
+### Variables in rows
+
+<br>
+
+```{r}
+clean_data_penguins |> 
+  summarize(across(all_of(numvars$names),
+                   .fns=~meansd(.x,add_n = TRUE))) |> 
+  pivot_longer(
+    cols = everything(),
+    names_to = "Variable",
+    values_to = "MeanSD") |>
+  flextable() |> 
+  set_table_properties(width=.7, layout="autofit")
+```
+
+<br>
+
+## all variables / 1 function / subgroups
+
+### group in rows
+
+<br>
+
+```{r}
+clean_data_penguins |> 
+  group_by(species) |> 
+  summarize(across(all_of(numvars$names),
+                   ~meansd(.x,add_n = TRUE)),
+            .groups = 'drop') |> 
+  flextable()|> 
+  set_table_properties(width=.7, layout="autofit")
+```
+
+<br>
+
+### Variables in rows
+
+<br>
+
+```{r}
+clean_data_penguins |> 
+  group_by(species) |> 
+  summarize(across(all_of(numvars$names),
+                   ~meansd(.x,add_n = TRUE)),
+            .groups = 'drop') |> 
+  pivot_longer(
+    cols = -species,
+    names_to = "Variable",
+    values_to = "MeanSD") |>
+  pivot_wider(names_from = species,
+              values_from = MeanSD,
+              names_prefix = "species: ") |>
+  flextable() |>
+  separate_header(split = ": ")|> 
+  set_table_properties(width=.7, layout="autofit")
+```
+
+<br>
+
+## all variables / 2 function / no groups 
+
+<br>
+
+```{r}
+
+clean_data_penguins |> 
+  summarize(across(all_of(numvars$names),
+    .fns=list(
+      MeanSD=~meansd(.x,
+                     add_n = TRUE),
+      MedianQuart=median_quart),
+    .names = "{.col}: {.fn}")) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = c("Variable",".value"),
+    names_sep=":") |>
+  flextable() |> 
+  set_table_properties(width=1, layout="autofit")
+```
+
+## all variables / 2 function / subgroups
+
+<br>
+
+```{r}
+# with/without function arguments
+clean_data_penguins |> 
+  group_by(species) |> 
+  summarize(across(
+    all_of(numvars$names),
+    .fns=list(
+      MeanSD=~meansd(.x,
+                     add_n = TRUE),
+      MedianQuart=median_quart)),
+    .groups="drop") |> 
+  flextable() |> 
+  set_table_properties(width=1, layout="autofit")
+```
+
+### variables in rows, groups in columns
+
+<br>
+
+```{r}
+clean_data_penguins |> 
+  group_by(species) |> 
+  summarize(across(
+    all_of(numvars$names),
+    .fns=list(
+      MeanSD=~meansd(.x,
+                     add_n = TRUE),
+      MedianQuart=median_quart)),
+    .groups="drop") |> 
+  pivot_longer(
+    cols = -species,
+    names_to = c("Variable",".value"),
+    names_pattern = "^(.+_.+)_(.+)$") |>
+  pivot_wider(names_from = species,
+              values_from = starts_with("M"),
+              names_glue = "{.value}\n{species}",
+              names_vary="slowest") |>#paart die Spezies zusammen
+  flextable() |> 
+  separate_header(split="[:_]") |>
+  set_table_properties(width=1, layout="autofit")
+```
+
+### with/without function arguments
+
+<br>
+
+```{r}
+result_long <- 
+  clean_data_penguins |> 
+  group_by(species) |> 
+  summarize(across(
+    all_of(numvars$names),
+    .fns=list(
+      MeanSD=~meansd(.x,
+                     add_n = TRUE),
+      MedianQuart=median_quart))) |> 
+  pivot_longer(cols = -c(species),
+               names_to = c('Variable','.value'),
+               names_pattern = "^(.+_.+)_(.+)$",
+               values_to = 'Value')
+result_long |> 
+  flextable() |> 
+  merge_v(j=1) |> 
+  set_table_properties(width=1, layout="autofit")
+
+cat ("<br>\n\n")
+
+result <- 
+  result_long |> 
+  pivot_wider(names_from=species,
+              names_sep=" ",
+              values_from=c(MeanSD, MedianQuart))
+result |> 
+  flextable() |> 
+  separate_header(split="[ ]") |> 
+  set_table_properties(width=1, layout="autofit")|>
+  theme_booktabs() |>
+  align(align = "center", part = "all")
+```
+
+## all variables / 2 function / 2 subgroups
+
+```{r}
+clean_data_penguins |> 
+  group_by(species, sex) |> 
+  summarize(across(
+    all_of(numvars$names),
+    .fns=list(
+      MeanSD=~meansd(.x,
+                     add_n = TRUE),
+      MedianQuart=median_quart)),
+    .groups="drop") |> 
+  pivot_longer(
+    cols = -c(species,sex),
+    names_to = "Variable",
+    values_to = "MeanSD")|>
+  pivot_wider(names_from = "Variable",
+              values_from = MeanSD) |>
+  flextable() |>
+  set_table_properties(width=1, layout="autofit")
+```
